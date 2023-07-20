@@ -9,6 +9,6 @@ public class TestBase
 
     public TestBase()
     {
-        TestContext.Services.AddSingleton<Microsoft.Fast.Components.FluentUI.GlobalState>();
+        TestContext.Services.AddSingleton<GlobalState>();
     }
 }

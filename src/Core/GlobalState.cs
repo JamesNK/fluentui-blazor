@@ -7,6 +7,26 @@ public class GlobalState
 
     public event Action? OnChange;
 
+    public GlobalState()
+    {
+    }
+
+
+    public GlobalState(StandardLuminance luminance)
+    {
+        Luminance = luminance;
+    }
+
+    public GlobalState(LocalizationDirection dir)
+    {
+        Dir = dir;
+    }
+
+    public GlobalState(StandardLuminance luminance, LocalizationDirection dir)
+    {
+        Luminance = luminance;
+        Dir = dir;
+    }
 
     public void SetDirection(LocalizationDirection dir)
     {

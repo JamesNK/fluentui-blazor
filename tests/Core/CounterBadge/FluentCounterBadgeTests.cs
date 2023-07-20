@@ -1,5 +1,6 @@
 ﻿using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Microsoft.Fast.Components.FluentUI.Tests.CounterBadge;
@@ -92,7 +93,7 @@ public class FluentCounterBadgeTests : TestBase
     public void FluentCounterBadge_BackgroundColorAndColorAttribute()
     {
         // Arrange && Act
-        var cut = TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        IRenderedComponent<FluentCounterBadge>? cut = TestContext.RenderComponent<FluentCounterBadge>(parameters =>
         {
             parameters.Add(p => p.BackgroundColor, Color.Accent);
             parameters.Add(p => p.Color, Color.Fill);
@@ -102,6 +103,57 @@ public class FluentCounterBadgeTests : TestBase
 
         // Assert
         cut.Verify();
+    }
+
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorNullAndColorSet()
+    {
+        // Arrange, Act && Assert
+        Assert.Throws<ArgumentException>(() => TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, null);
+            parameters.Add(p => p.Color, Color.Fill);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        }));
+    }
+
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorSetAndColorNull()
+    {
+        // Arrange, Act && Assert
+        Assert.Throws<ArgumentException>(() => TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, Color.Accent);
+            parameters.Add(p => p.Color, null);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        }));
+    }
+
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorCustom()
+    {
+        // Arrange, Act && Assert
+        Assert.Throws<ArgumentException>(() => TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, Color.Custom);
+            parameters.Add(p => p.Color, Color.Custom);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        }));
+    }
+
+    [Fact]
+    public void FluentCounterBadge_AppearanceOutline()
+    {
+        // Arrange, Act && Assert
+        Assert.Throws<ArgumentException>(() => TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.Appearance, Appearance.Outline);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        }));
     }
 
     [Fact]
@@ -119,4 +171,57 @@ public class FluentCounterBadgeTests : TestBase
         cut.Verify();
     }
 
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorLightweightLuminanceDark()
+    {
+        // Arrange && Act
+        TestContext.Services.AddSingleton(new GlobalState(StandardLuminance.DarkMode));
+
+        var cut = TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, Color.Lightweight);
+            parameters.Add(p => p.Color, Color.Fill);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        });
+
+        // Assert
+        cut.Verify();
+    }
+
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorLightweightLuminanceLight()
+    {
+        // Arrange && Act
+        TestContext.Services.AddSingleton(new GlobalState(StandardLuminance.LightMode));
+
+        var cut = TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, Color.Lightweight);
+            parameters.Add(p => p.Color, Color.Fill);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        });
+
+        // Assert
+        cut.Verify();
+    }
+
+    [Fact]
+    public void FluentCounterBadge_BackgroundColorErrorLuminanceDark()
+    {
+        // Arrange && Act
+        TestContext.Services.AddSingleton(new GlobalState(StandardLuminance.DarkMode));
+
+        var cut = TestContext.RenderComponent<FluentCounterBadge>(parameters =>
+        {
+            parameters.Add(p => p.BackgroundColor, Color.Error);
+            parameters.Add(p => p.Color, Color.Fill);
+            parameters.Add(p => p.Count, 1);
+            parameters.AddChildContent("childcontent");
+        });
+
+        // Assert
+        cut.Verify();
+    }
 }
