@@ -8,10 +8,29 @@
 
 @if (Dialog != null)
 {
-    <FluentStack Orientation="Orientation.Vertical" Style="border: 1px solid red; padding: 10px">
-        <span>This section is visible only when component is hosted inside a Dialog</span>
+    <FluentStack Orientation="Orientation.Vertical" Style="border: 1px solid red; padding: 10px; overflow-y: scroll; max-height: 300px;">
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
+        <p>This section is visible only when component is hosted inside a Dialog</p>
         <FluentButton OnClick="@(() => ToggleDialogPrimaryActionButton(true))">Enable Dialog Primary Action</FluentButton>
         <FluentButton OnClick="@(() => ToggleDialogPrimaryActionButton(false))">Disable Dialog Primary Action</FluentButton>
+
+        <FluentSelect Id="state" name="state" TOption="string" Height="300px" Position="SelectPosition.Below">
+            <FluentOption Value="AL">Alabama</FluentOption>
+            <FluentOption Value="AK">Alaska</FluentOption>
+            <FluentOption Value="AZ">Arizona</FluentOption>
+        </FluentSelect>
     </FluentStack>
 }
 
