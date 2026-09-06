@@ -16,6 +16,7 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
 {
     private FluentJSModule? _jsModule;
     private CachedServices? _cachedServices;
+    private bool _jsModuleDisposalClaimed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FluentComponentBase"/> class with the specified configuration.
@@ -117,9 +118,14 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
         await JSModule.ImportJavaScriptModuleAsync(file);
         if (IsDisposed)
         {
-            // The module may have been null when DisposeAsync ran while the import was pending.
-            // Dispose it now so the completed import doesn't leak the module reference.
-            await JSModule.DisposeAsync();
+            // Only claim a late module if DisposeAsync had no module to clean up.
+            // Otherwise component-specific cleanup may still be using it.
+            if (!_jsModuleDisposalClaimed)
+            {
+                _jsModuleDisposalClaimed = true;
+                await JSModule.DisposeAsync();
+            }
+
             return false;
         }
 
@@ -134,12 +140,19 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
     [ExcludeFromCodeCoverage]
     public virtual async ValueTask DisposeAsync()
     {
-        IsDisposed = true;
-        if (_jsModule != null && _jsModule.Imported)
+        if (IsDisposed)
         {
+            return;
+        }
+
+        IsDisposed = true;
+        var moduleToDispose = _jsModule is { Imported: true } ? _jsModule : null;
+        if (moduleToDispose is not null)
+        {
+            _jsModuleDisposalClaimed = true;
             try
             {
-                await DisposeAsync(_jsModule.ObjectReference);
+                await DisposeAsync(moduleToDispose.ObjectReference);
             }
             catch (Exception ex) when (ex is JSDisconnectedException ||
                                        ex is OperationCanceledException ||
@@ -152,7 +165,10 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
 
         _cachedServices?.DisposeTooltipAsync(this);
         _cachedServices?.Dispose();
-        await JSModule.DisposeAsync();
+        if (moduleToDispose is not null)
+        {
+            await moduleToDispose.DisposeAsync();
+        }
     }
 
     /// <summary>

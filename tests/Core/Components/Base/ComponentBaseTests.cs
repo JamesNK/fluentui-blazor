@@ -378,6 +378,67 @@ public class ComponentBaseTests : Bunit.BunitContext
         Assert.Equal(1, module.DisposeCount);
     }
 
+    [Fact]
+    public async Task TryImportJavaScriptModuleAsync_DuringComponentCleanup_LeavesModuleForCleanup()
+    {
+        var runtime = new DeferredImportJSRuntime();
+        var module = new TrackingJSObjectReference();
+        var cleanupCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cleanupFinished = false;
+        var component = new ImportingComponent(runtime)
+        {
+            CleanupAsync = async reference =>
+            {
+                await cleanupCompletion.Task;
+                Assert.Same(module, reference);
+                Assert.Equal(0, module.DisposeCount);
+                cleanupFinished = true;
+            }
+        };
+        runtime.Completion.SetResult(module);
+        Assert.True(await component.TryImportAsync());
+        var disposalTask = component.DisposeAsync().AsTask();
+        Assert.False(disposalTask.IsCompleted);
+
+        var imported = await component.TryImportAsync();
+        cleanupCompletion.SetResult();
+        await disposalTask;
+
+        Assert.False(imported);
+        Assert.True(cleanupFinished);
+        Assert.Equal(1, module.DisposeCount);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TryImportJavaScriptModuleAsync_AfterModuleDisposal_DoesNotDisposeAgain(bool importBeforeDisposal)
+    {
+        var runtime = new DeferredImportJSRuntime();
+        var module = new TrackingJSObjectReference();
+        var component = new ImportingComponent(runtime);
+        var importTask = component.TryImportAsync();
+
+        if (importBeforeDisposal)
+        {
+            runtime.Completion.SetResult(module);
+            Assert.True(await importTask);
+            await component.DisposeAsync();
+        }
+        else
+        {
+            await component.DisposeAsync();
+            runtime.Completion.SetResult(module);
+            Assert.False(await importTask);
+        }
+
+        var imported = await component.TryImportAsync();
+        await component.DisposeAsync();
+
+        Assert.False(imported);
+        Assert.Equal(1, module.DisposeCount);
+    }
+
     // Helper method to parse HTML attributes
     private static (string Name, string Value) ParseHtmlAttribute(string attributeString)
     {
@@ -416,7 +477,12 @@ public class ComponentBaseTests : Bunit.BunitContext
 
         public IJSObjectReference Module => JSModule.ObjectReference;
 
+        public Func<IJSObjectReference, Task>? CleanupAsync { get; init; }
+
         public Task<bool> TryImportAsync() => TryImportJavaScriptModuleAsync("./test-module.js");
+
+        protected override ValueTask DisposeAsync(IJSObjectReference jsModule)
+            => new(CleanupAsync?.Invoke(jsModule) ?? Task.CompletedTask);
     }
 
     private sealed class DeferredImportJSRuntime : IJSRuntime
