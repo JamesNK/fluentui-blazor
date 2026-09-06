@@ -157,7 +157,11 @@ public partial class FluentPullToRefresh : FluentComponentBase
     {
         if (firstRender && EmulateTouch)
         {
-            await JSModule.ImportJavaScriptModuleAsync(JAVASCRIPT_FILE);
+            if (!await TryImportJavaScriptModuleAsync(JAVASCRIPT_FILE))
+            {
+                return;
+            }
+
             await JSModule.ObjectReference.InvokeVoidAsync("Microsoft.FluentUI.Blazor.PullToRefresh.InitTouchEmulator");
         }
     }

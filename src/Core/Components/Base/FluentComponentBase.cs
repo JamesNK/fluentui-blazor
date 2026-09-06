@@ -55,6 +55,11 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
     protected internal LibraryConfiguration? LibraryConfiguration { get; }
 
     /// <summary>
+    /// Gets a value indicating whether component disposal has started.
+    /// </summary>
+    protected bool IsDisposed { get; private set; }
+
+    /// <summary>
     /// Gets the JavaScript module imported with the <see cref="FluentJSModule.ImportJavaScriptModuleAsync"/> method.
     /// You need to call this method (in the `OnAfterRenderAsync` method) before using the module.
     /// </summary>
@@ -103,6 +108,25 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
     public virtual IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
+    /// Imports the JavaScript module and disposes it if the component has been disposed.
+    /// </summary>
+    /// <param name="file">The path of the JavaScript module to import.</param>
+    /// <returns><see langword="true"/> if the component is still active; otherwise, <see langword="false"/>.</returns>
+    protected async Task<bool> TryImportJavaScriptModuleAsync(string file)
+    {
+        await JSModule.ImportJavaScriptModuleAsync(file);
+        if (IsDisposed)
+        {
+            // The module may have been null when DisposeAsync ran while the import was pending.
+            // Dispose it now so the completed import doesn't leak the module reference.
+            await JSModule.DisposeAsync();
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Dispose the current object.
     /// </summary>
     /// <returns></returns>
@@ -110,6 +134,7 @@ public abstract class FluentComponentBase : ComponentBase, IAsyncDisposable, IFl
     [ExcludeFromCodeCoverage]
     public virtual async ValueTask DisposeAsync()
     {
+        IsDisposed = true;
         if (_jsModule != null && _jsModule.Imported)
         {
             try
